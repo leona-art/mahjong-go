@@ -5,6 +5,7 @@ package firestore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	fs "cloud.google.com/go/firestore"
 	"google.golang.org/grpc/codes"
@@ -38,6 +39,9 @@ type roomDocument struct {
 }
 
 func (r *RoomRepository) Save(ctx context.Context, room *domain.Room) error {
+	if err := validateRoomID(room.ID()); err != nil {
+		return err
+	}
 	seats := room.Seats()
 	doc := roomDocument{
 		HostUID:      string(room.HostUID()),
@@ -53,6 +57,9 @@ func (r *RoomRepository) Save(ctx context.Context, room *domain.Room) error {
 }
 
 func (r *RoomRepository) FindByID(ctx context.Context, id domain.RoomID) (*domain.Room, error) {
+	if err := validateRoomID(id); err != nil {
+		return nil, err
+	}
 	snap, err := r.client.Collection(roomsCollection).Doc(string(id)).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
@@ -99,4 +106,11 @@ func stringsToSeats(seats []string) ([domain.SeatCount]domain.UID, error) {
 		out[i] = domain.UID(uid)
 	}
 	return out, nil
+}
+
+func validateRoomID(id domain.RoomID) error {
+	if strings.Contains(string(id), "/") {
+		return fmt.Errorf("firestore: invalid room id %q: must not contain '/'", id)
+	}
+	return nil
 }

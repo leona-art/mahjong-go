@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -121,6 +122,33 @@ func TestRoomRepository_SaveAndFindByID(t *testing.T) {
 		}
 		if got.Status() != domain.RoomStatusReady {
 			t.Errorf("Status() = %v, want RoomStatusReady", got.Status())
+		}
+	})
+}
+
+func TestRoomRepository_InvalidRoomID(t *testing.T) {
+	t.Run("Saveはスラッシュを含むRoomIDを拒否する", func(t *testing.T) {
+		repo := matchingfs.NewRoomRepository(nil)
+		room, err := domain.NewRoom("room/with-slash", "host", domain.RoomSettings{
+			GameLength:   domain.GameLengthHanchan,
+			InitialScore: 25000,
+		})
+		if err != nil {
+			t.Fatalf("NewRoom() error = %v", err)
+		}
+
+		err = repo.Save(context.Background(), room)
+		if err == nil || !strings.Contains(err.Error(), "invalid room id") {
+			t.Fatalf("Save() error = %v, want invalid room id error", err)
+		}
+	})
+
+	t.Run("FindByIDはスラッシュを含むRoomIDを拒否する", func(t *testing.T) {
+		repo := matchingfs.NewRoomRepository(nil)
+
+		_, err := repo.FindByID(context.Background(), "room/with-slash")
+		if err == nil || !strings.Contains(err.Error(), "invalid room id") {
+			t.Fatalf("FindByID() error = %v, want invalid room id error", err)
 		}
 	})
 }
