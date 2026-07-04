@@ -37,6 +37,7 @@ cmd/client/main.go                # Example Connect client calling the server
 buf.yaml                          # Buf module config (lint: STANDARD, breaking: FILE)
 buf.gen.yaml                      # Buf codegen plugin config
 docs/design/architecture.md       # DDD architecture: bounded contexts, layering, infra decisions
+firebase.json / .firebaserc       # Firestore emulator config for local dev/tests (project: demo-mahjong, port 8080)
 go.mod                            # Also pins codegen tools via `tool (...)` directives (Go 1.24+)
 ```
 
@@ -90,6 +91,16 @@ go run ./cmd/client
 # Standard Go checks
 go vet ./...
 go test ./...
+
+# Start the Firestore emulator for local repository tests (reads
+# firebase.json/.firebaserc at the repo root; no gcloud/firebase install
+# needed, npx downloads it on first run)
+npx firebase-tools emulators:start --only firestore
+
+# In another terminal, run the Firestore-backed repository tests against it
+# (they self-skip when this env var isn't set, so `go test ./...` alone is
+# still safe without the emulator running)
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 go test ./...
 ```
 
 There is no CI configuration, Makefile, or linter config in the repo yet —

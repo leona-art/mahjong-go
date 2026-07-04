@@ -75,6 +75,20 @@ func NewRoom(id RoomID, hostUID UID, settings RoomSettings) (*Room, error) {
 	return room, nil
 }
 
+// RehydrateRoom reconstructs a Room from previously persisted state. It is
+// intended for repository implementations restoring a Room from storage and
+// does not re-run the invariants NewRoom enforces at creation time, since
+// that state was already valid when it was saved.
+func RehydrateRoom(id RoomID, hostUID UID, seats [SeatCount]UID, settings RoomSettings, status RoomStatus) *Room {
+	return &Room{
+		id:       id,
+		hostUID:  hostUID,
+		seats:    seats,
+		settings: settings,
+		status:   status,
+	}
+}
+
 func (r *Room) ID() RoomID             { return r.id }
 func (r *Room) HostUID() UID           { return r.hostUID }
 func (r *Room) Settings() RoomSettings { return r.settings }
