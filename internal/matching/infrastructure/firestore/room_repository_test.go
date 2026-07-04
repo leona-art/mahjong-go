@@ -18,7 +18,7 @@ import (
 
 // newTestClient connects to a Firestore emulator. Start one locally with:
 //
-//	npx firebase-tools emulators:start --only firestore --project demo-mahjong
+//	npx firebase-tools emulators:start --only firestore
 //
 // then run these tests with FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 set (see
 // firebase.json at the repo root for the configured port). The test skips
