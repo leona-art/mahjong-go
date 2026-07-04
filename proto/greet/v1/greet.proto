@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package greet.v1;
+
+option go_package = "github.com/leona-art/mahjong-go/gen/greet/v1;greetv1";
+
+// GreetService is a sample service used to verify the Connect-Go setup.
+service GreetService {
+  rpc Greet(GreetRequest) returns (GreetResponse) {}
+}
+
+message GreetRequest {
+  string name = 1;
+}
+
+message GreetResponse {
+  string greeting = 1;
+}
