@@ -12,7 +12,7 @@ func newTestSettings() domain.RoomSettings {
 }
 
 func TestNewRoom(t *testing.T) {
-	t.Run("host is seated in the first seat", func(t *testing.T) {
+	t.Run("ホストが最初の席に着席する", func(t *testing.T) {
 		room, err := domain.NewRoom("room-1", "host", newTestSettings())
 		if err != nil {
 			t.Fatalf("NewRoom() error = %v", err)
@@ -25,7 +25,7 @@ func TestNewRoom(t *testing.T) {
 		}
 	})
 
-	t.Run("rejects empty host uid", func(t *testing.T) {
+	t.Run("host uidが空の場合はエラーになる", func(t *testing.T) {
 		if _, err := domain.NewRoom("room-1", "", newTestSettings()); !errors.Is(err, domain.ErrHostUIDRequired) {
 			t.Errorf("NewRoom() error = %v, want ErrHostUIDRequired", err)
 		}
@@ -33,7 +33,7 @@ func TestNewRoom(t *testing.T) {
 }
 
 func TestRoom_Join(t *testing.T) {
-	t.Run("becomes ready once all seats are filled", func(t *testing.T) {
+	t.Run("全席埋まるとReadyになる", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		for _, uid := range []domain.UID{"p2", "p3", "p4"} {
 			if err := room.Join(uid); err != nil {
@@ -45,7 +45,7 @@ func TestRoom_Join(t *testing.T) {
 		}
 	})
 
-	t.Run("rejects joining a full room", func(t *testing.T) {
+	t.Run("満席の部屋への参加は拒否される", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		for _, uid := range []domain.UID{"p2", "p3", "p4"} {
 			_ = room.Join(uid)
@@ -55,14 +55,14 @@ func TestRoom_Join(t *testing.T) {
 		}
 	})
 
-	t.Run("rejects duplicate uid", func(t *testing.T) {
+	t.Run("同一uidの重複参加は拒否される", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		if err := room.Join("host"); !errors.Is(err, domain.ErrAlreadyJoined) {
 			t.Errorf("Join() error = %v, want ErrAlreadyJoined", err)
 		}
 	})
 
-	t.Run("rejects joining a started room", func(t *testing.T) {
+	t.Run("開始済みの部屋への参加は拒否される", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		for _, uid := range []domain.UID{"p2", "p3", "p4"} {
 			_ = room.Join(uid)
@@ -77,7 +77,7 @@ func TestRoom_Join(t *testing.T) {
 }
 
 func TestRoom_Leave(t *testing.T) {
-	t.Run("frees the seat and reverts to waiting", func(t *testing.T) {
+	t.Run("席が空きWaitingに戻る", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		for _, uid := range []domain.UID{"p2", "p3", "p4"} {
 			_ = room.Join(uid)
@@ -93,21 +93,21 @@ func TestRoom_Leave(t *testing.T) {
 		}
 	})
 
-	t.Run("host cannot leave", func(t *testing.T) {
+	t.Run("hostは退出できない", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		if err := room.Leave("host"); !errors.Is(err, domain.ErrHostCannotLeave) {
 			t.Errorf("Leave() error = %v, want ErrHostCannotLeave", err)
 		}
 	})
 
-	t.Run("rejects leaving a player not in the room", func(t *testing.T) {
+	t.Run("部屋にいないプレイヤーの退出は拒否される", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		if err := room.Leave("nobody"); !errors.Is(err, domain.ErrPlayerNotInRoom) {
 			t.Errorf("Leave() error = %v, want ErrPlayerNotInRoom", err)
 		}
 	})
 
-	t.Run("rejects leaving a started room", func(t *testing.T) {
+	t.Run("開始済みの部屋からの退出は拒否される", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		for _, uid := range []domain.UID{"p2", "p3", "p4"} {
 			_ = room.Join(uid)
@@ -122,14 +122,14 @@ func TestRoom_Leave(t *testing.T) {
 }
 
 func TestRoom_Start(t *testing.T) {
-	t.Run("rejects starting before all seats are filled", func(t *testing.T) {
+	t.Run("全席埋まっていない場合の開始は拒否される", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		if _, err := room.Start(); !errors.Is(err, domain.ErrSeatsNotFilled) {
 			t.Errorf("Start() error = %v, want ErrSeatsNotFilled", err)
 		}
 	})
 
-	t.Run("emits RoomStarted with the final seating", func(t *testing.T) {
+	t.Run("最終的な座席でRoomStartedを発行する", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		for _, uid := range []domain.UID{"p2", "p3", "p4"} {
 			_ = room.Join(uid)
@@ -149,7 +149,7 @@ func TestRoom_Start(t *testing.T) {
 		}
 	})
 
-	t.Run("rejects starting an already started room", func(t *testing.T) {
+	t.Run("開始済みの部屋の再開始は拒否される", func(t *testing.T) {
 		room, _ := domain.NewRoom("room-1", "host", newTestSettings())
 		for _, uid := range []domain.UID{"p2", "p3", "p4"} {
 			_ = room.Join(uid)

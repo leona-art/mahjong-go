@@ -111,3 +111,9 @@ verification suite. Run them after making changes.
 - Keep new proto packages under a `<name>/v1` directory and use
   `buf breaking` against `main` before merging changes to an existing
   package's wire format.
+- **Test subtest names are Japanese.** The string argument passed to
+  `t.Run(...)` must be written in Japanese so failures read clearly for this
+  team (e.g. `t.Run("満席の部屋への参加は拒否される", ...)`). Test function
+  names (`TestXxx`) stay in English/Go identifier form as usual — only the
+  `t.Run` description strings are Japanese. Apply this to every new test,
+  not just ones the user calls out explicitly.
