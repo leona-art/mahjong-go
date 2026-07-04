@@ -4,12 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-`mahjong-go` is in its bootstrap phase. Despite the module name, there is no
-mahjong game logic yet — the repository currently contains only a Connect-Go
-(gRPC/RPC-over-HTTP) service skeleton with a single sample `GreetService`
-used to verify the toolchain wiring. Expect to build the actual mahjong
-domain (game state, rules, players, rooms, etc.) as proto services and Go
-packages following the patterns established here.
+`mahjong-go` is moving out of its bootstrap phase. The repository still
+contains the original Connect-Go service skeleton with a sample
+`GreetService` used to verify the toolchain wiring, and is now growing the
+actual mahjong domain under `internal/` following the DDD architecture
+recorded in `docs/design/architecture.md`.
+
+**Read `docs/design/architecture.md` (and the `mahjong-architecture` skill
+under `.claude/skills/`) before working on anything under `internal/`** — it
+records the bounded contexts (Identity, Matching, Game), the
+domain/application/infrastructure layering convention, and key
+infrastructure decisions (Identity Platform for auth, backend-relayed
+Firestore streaming instead of direct client subscription).
 
 ## Tech stack
 
@@ -23,16 +29,26 @@ packages following the patterns established here.
 ```
 proto/<package>/v1/*.proto        # Proto source of truth (buf module root: proto/)
 gen/<package>/v1/                 # Generated Go code (protoc-gen-go + protoc-gen-connect-go); DO NOT hand-edit
+internal/<context>/domain/        # Entities, value objects, aggregates, domain events, repository interfaces
+internal/<context>/application/   # Command/Query use cases (CQS), orchestrates the domain layer
+internal/<context>/infrastructure/ # Repository implementations (Firestore, etc.), auth integration
 cmd/server/main.go                # Example Connect server (h2c on localhost:8080)
 cmd/client/main.go                # Example Connect client calling the server
 buf.yaml                          # Buf module config (lint: STANDARD, breaking: FILE)
 buf.gen.yaml                      # Buf codegen plugin config
+docs/design/architecture.md       # DDD architecture: bounded contexts, layering, infra decisions
 go.mod                            # Also pins codegen tools via `tool (...)` directives (Go 1.24+)
 ```
 
 Proto packages follow a `<service>/v1` versioning convention (e.g.
 `greet/v1`), mirrored in both `proto/` and `gen/`. New domains (e.g. a future
 `game/v1` or `room/v1`) should follow the same shape.
+
+Bounded contexts under `internal/` (Identity, Matching, Game — see
+`docs/design/architecture.md`) each get their own `domain/`, `application/`,
+and `infrastructure/` subpackages. The domain layer must not depend on the
+other two; the application layer depends only on the domain layer and
+reaches infrastructure through interfaces declared in the domain layer.
 
 ## Codegen tool management
 
