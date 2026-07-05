@@ -40,20 +40,30 @@ internal/<context>/infrastructure/  # Firestore実装、認証連携などの具
 - イベント: `RoomStarted{ RoomID, Seats }`
 - 実装場所: `internal/matching/domain`, `internal/matching/application`, `internal/matching/infrastructure/firestore`
 
-## Firestoreエミュレータでのローカル動作確認
+## Player集約と認証（Identityコンテキスト、実装済み）
 
-Firestore実装（`internal/matching/infrastructure/firestore`）のテストは実プロジェクトではなくエミュレータに対して実行する。リポジトリルートの`firebase.json`/`.firebaserc`にプロジェクトID(`demo-mahjong`)とポート(8080)が固定してある。
+- ユーザー登録・ログイン自体は自前実装しない。クライアントがFirebase Auth SDKで直接Identity Platformにサインアップ/ログインし、IDトークンを`Authorization: Bearer <token>`で付与してRPCを呼ぶ
+- **認証**: `internal/identity/infrastructure/firebaseauth`がFirebase Admin SDKでIDトークンを検証する`connect.Interceptor`（`NewInterceptor(verifier)`）を提供する。検証成功で`uid`を`context`に埋め込み（`UIDFromContext`で取得）、失敗時は`connect.CodeUnauthenticated`を返す。`Verifier`はinterfaceなのでテストはFirebase Admin SDK非依存のフェイクに差し替えられる。ローカル開発では`firebaseauth.NewClient`が`FIREBASE_AUTH_EMULATOR_HOST`を自動で尊重する
+- **Player集約**: 属性は`uid`（識別子）と`displayName`（表示名、上限`MaxDisplayNameLength`文字）
+  - コマンド: `NewPlayer(uid, displayName)`（domain）、`RegisterPlayer`（application, `PlayerCommandService`） — 登録は作成のみで、既存`uid`の再登録は`ErrPlayerAlreadyRegistered`で拒否（アップサートしない）
+  - クエリ: `GetPlayer(uid)` → `PlayerView`（application, `PlayerQueryService`）
+  - 実装場所: `internal/identity/domain`, `internal/identity/application`, `internal/identity/infrastructure/firestore`（`players`コレクション）, `internal/identity/infrastructure/firebaseauth`
+  - API: `proto/identity/v1/identity.proto`の`PlayerService`。`RegisterPlayerRequest`に`uid`フィールドは無く、必ずinterceptorが検証済みcontext上の`uid`を使う（なりすまし防止）。`GetPlayer`は他プレイヤーの表示名取得のため明示的に`uid`を引数に取る
+
+## Firestore / Auth エミュレータでのローカル動作確認
+
+Firestore実装（`internal/*/infrastructure/firestore`）とFirebase Auth連携（`internal/identity/infrastructure/firebaseauth`）のテストは実プロジェクトではなくエミュレータに対して実行する。リポジトリルートの`firebase.json`/`.firebaserc`にプロジェクトID(`demo-mahjong`)とポート(Firestore: 8080, Auth: 9099)が固定してある。
 
 ```bash
-npx firebase-tools emulators:start --only firestore
-FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 go test ./...
+npx firebase-tools emulators:start --only firestore,auth
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 go test ./...
 ```
 
-`FIRESTORE_EMULATOR_HOST`未設定時は該当テストが自動スキップされるので、エミュレータなしでも`go test ./...`は通る。詳細は`docs/design/architecture.md`の「ローカル動作確認」セクション参照。
+各エミュレータ用の環境変数が未設定時は該当テストが自動スキップされるので、エミュレータなしでも`go test ./...`は通る。詳細は`docs/design/architecture.md`の「ローカル動作確認」セクション参照。
 
 ## 開発フェーズ
 
-1. Phase 1: Identity Platform認証 + Matchingコンテキスト（Room集約、実装済み） — 残: 認証(uid抽出interceptor)とGameコンテキストへのハンドオフ
+1. Phase 1: Identity Platform認証（IDトークン検証interceptor）+ Player集約、Matchingコンテキスト（Room集約） — 実装済み。残: `cmd/server`への実ハンドラ配線とGameコンテキストへのハンドオフ
 2. Phase 2: Gameコンテキスト（麻雀ドメインロジック本体）
 3. 以降: 対局履歴・統計等の参照系コンテキスト
 
