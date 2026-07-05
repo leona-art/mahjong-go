@@ -15,14 +15,18 @@
 各境界づけられたコンテキストは、以下の3層で構成する。
 
 ```
-internal/<context>/domain/          # エンティティ、値オブジェクト、ドメインイベント、集約、リポジトリインターフェース
-internal/<context>/application/     # Command/Queryユースケース（CQS）。ドメイン層を呼び出すオーケストレーション
+internal/<context>/domain/          # エンティティ、値オブジェクト、ドメインイベント、集約
+internal/<context>/application/     # Command/Queryユースケース（CQS）。ドメイン層を呼び出すオーケストレーション、リポジトリインターフェース
 internal/<context>/infrastructure/  # リポジトリ実装（Firestore等）、認証連携、外部サービス連携
 ```
 
-- ドメイン層は他レイヤーに依存しない（インフラ層のインターフェースはドメイン層で宣言し、実装はインフラ層に置く）
-- アプリケーション層はドメイン層のみに依存し、インフラ層には依存性逆転（インターフェース経由）でアクセスする
+- ドメイン層は他レイヤーに依存しない。永続化という概念そのものを一切知らない、純粋なビジネスルールのモデルとする（リポジトリインターフェースも置かない）
+- リポジトリインターフェース（ポート）は**アプリケーション層**で宣言する。永続化を必要とするのはユースケースを実行するアプリケーション層であり、ドメイン層ではないため
+- アプリケーション層はドメイン層に依存し、自身が宣言したインターフェース経由でインフラ層にアクセスする（依存性逆転）
+- インフラ層はアプリケーション層のインターフェースを実装し、ドメイン層の型（エンティティ・値オブジェクト）を直接利用してよい
 - connect-goのハンドラ（`cmd/server`配下）はアプリケーション層のCommand/Queryサービスを呼び出すだけの薄い層にする
+
+> 既存の`internal/matching`（Room集約）は移行前の旧方式（リポジトリインターフェースをドメイン層で宣言）のままになっている。新規コードはこの節の方式に従うこと。詳細は本ドキュメント末尾の「既知のTODO」を参照。
 
 ## 認証
 
@@ -71,7 +75,8 @@ FirestoreをGCP上のリアルタイム基盤として使うが、**フロント
 - **不変条件**: `uid`必須、表示名は空不可・上限文字数以内
 - **コマンド**: `NewPlayer(uid, displayName)`（domain）、`RegisterPlayer`（application, `PlayerCommandService`） — 登録は作成のみで、既に存在する`uid`の再登録は`ErrPlayerAlreadyRegistered`で拒否する（アップサートしない）
 - **クエリ**: `GetPlayer(uid)` → `PlayerView`（application, `PlayerQueryService`）
-- 実装: `internal/identity/domain`（Player集約）、`internal/identity/application`（`PlayerCommandService`/`PlayerQueryService`）、`internal/identity/infrastructure/firestore`（`PlayerRepository`のFirestore実装、`players`コレクション）、`internal/identity/infrastructure/firebaseauth`（IDトークン検証・interceptor）
+- `PlayerRepository`インターフェース（`Create`/`FindByUID`、`ErrPlayerNotFound`/`ErrPlayerAlreadyExists`）は**アプリケーション層**（`internal/identity/application`）で宣言する。Player集約自体（`internal/identity/domain`）は永続化について何も知らない
+- 実装: `internal/identity/domain`（Player集約のみ）、`internal/identity/application`（`PlayerCommandService`/`PlayerQueryService`/`PlayerRepository`インターフェース）、`internal/identity/infrastructure/firestore`（`PlayerRepository`のFirestore実装、`players`コレクション）、`internal/identity/infrastructure/firebaseauth`（IDトークン検証・interceptor）
 - API: `proto/identity/v1/identity.proto`の`PlayerService`（`RegisterPlayer`/`GetPlayer`）。`RegisterPlayerRequest`に`uid`フィールドは無く、必ずinterceptorが検証したcontext上の`uid`を使う（なりすまし防止）。`GetPlayer`は他プレイヤーの表示名取得（部屋のメンバー表示など）のため明示的に`uid`を引数に取る
 
 ### 2. Matching（マッチング）context
@@ -131,3 +136,7 @@ npx firebase-tools emulators:start --only firestore,auth
 # firebaseauth.NewClientはFIREBASE_AUTH_EMULATOR_HOSTを自動で尊重する
 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 go test ./...
 ```
+
+## 既知のTODO
+
+- **`internal/matching`（Room集約）のリポジトリインターフェース移行**: 「レイヤー構成」節で決めた新方式（リポジトリインターフェースはドメイン層ではなくアプリケーション層で宣言する）は現時点でIdentityコンテキストにのみ適用済み。Matchingコンテキストの`RoomRepository`は今も`internal/matching/domain/room_repository.go`にインターフェースが残ったままなので、後日`internal/matching/application`側に移し、`ErrRoomNotFound`も含めて移動したうえで`internal/matching/infrastructure/firestore`の参照先を更新する（Identityでの`PlayerRepository`移行と同じ手順）。

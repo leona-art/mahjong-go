@@ -12,6 +12,7 @@ import (
 
 	fs "cloud.google.com/go/firestore"
 
+	"github.com/leona-art/mahjong-go/internal/identity/application"
 	"github.com/leona-art/mahjong-go/internal/identity/domain"
 	identityfs "github.com/leona-art/mahjong-go/internal/identity/infrastructure/firestore"
 )
@@ -79,7 +80,7 @@ func TestPlayerRepository_CreateAndFindByUID(t *testing.T) {
 		repo := identityfs.NewPlayerRepository(client)
 
 		_, err := repo.FindByUID(context.Background(), uniqueUID(t))
-		if !errors.Is(err, domain.ErrPlayerNotFound) {
+		if !errors.Is(err, application.ErrPlayerNotFound) {
 			t.Errorf("FindByUID() error = %v, want ErrPlayerNotFound", err)
 		}
 	})
@@ -96,7 +97,7 @@ func TestPlayerRepository_CreateAndFindByUID(t *testing.T) {
 
 		duplicate, _ := domain.NewPlayer(uid, "じろう")
 		err := repo.Create(context.Background(), duplicate)
-		if !errors.Is(err, domain.ErrPlayerAlreadyExists) {
+		if !errors.Is(err, application.ErrPlayerAlreadyExists) {
 			t.Errorf("Create() error = %v, want ErrPlayerAlreadyExists", err)
 		}
 	})

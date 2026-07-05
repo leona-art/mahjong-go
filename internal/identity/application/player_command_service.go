@@ -16,11 +16,11 @@ var ErrPlayerAlreadyRegistered = errors.New("application: player already registe
 // PlayerCommandService implements the state-changing use cases for the
 // Identity context's Player aggregate.
 type PlayerCommandService struct {
-	players domain.PlayerRepository
+	players PlayerRepository
 }
 
 // NewPlayerCommandService wires a PlayerCommandService to its repository.
-func NewPlayerCommandService(players domain.PlayerRepository) *PlayerCommandService {
+func NewPlayerCommandService(players PlayerRepository) *PlayerCommandService {
 	return &PlayerCommandService{players: players}
 }
 
@@ -38,7 +38,7 @@ func (s *PlayerCommandService) RegisterPlayer(ctx context.Context, cmd RegisterP
 		return err
 	}
 	if err := s.players.Create(ctx, player); err != nil {
-		if errors.Is(err, domain.ErrPlayerAlreadyExists) {
+		if errors.Is(err, ErrPlayerAlreadyExists) {
 			return ErrPlayerAlreadyRegistered
 		}
 		return err

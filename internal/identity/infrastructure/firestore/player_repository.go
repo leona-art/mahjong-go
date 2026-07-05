@@ -1,5 +1,6 @@
 // Package firestore is the Identity bounded context's infrastructure-layer
-// implementation of domain.PlayerRepository, backed by Cloud Firestore.
+// implementation of application.PlayerRepository, backed by Cloud
+// Firestore.
 package firestore
 
 import (
@@ -11,13 +12,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/leona-art/mahjong-go/internal/identity/application"
 	"github.com/leona-art/mahjong-go/internal/identity/domain"
 )
 
 const playersCollection = "players"
 
-// PlayerRepository is a Firestore-backed domain.PlayerRepository. Point the
-// client at the Firestore emulator locally by setting the
+// PlayerRepository is a Firestore-backed application.PlayerRepository.
+// Point the client at the Firestore emulator locally by setting the
 // FIRESTORE_EMULATOR_HOST environment variable before constructing it.
 type PlayerRepository struct {
 	client *fs.Client
@@ -41,7 +43,7 @@ func (r *PlayerRepository) Create(ctx context.Context, player *domain.Player) er
 	doc := playerDocument{DisplayName: player.DisplayName()}
 	if _, err := r.client.Collection(playersCollection).Doc(string(player.UID())).Create(ctx, doc); err != nil {
 		if status.Code(err) == codes.AlreadyExists {
-			return domain.ErrPlayerAlreadyExists
+			return application.ErrPlayerAlreadyExists
 		}
 		return fmt.Errorf("firestore: create player %s: %w", player.UID(), err)
 	}
@@ -55,7 +57,7 @@ func (r *PlayerRepository) FindByUID(ctx context.Context, uid domain.UID) (*doma
 	snap, err := r.client.Collection(playersCollection).Doc(string(uid)).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, domain.ErrPlayerNotFound
+			return nil, application.ErrPlayerNotFound
 		}
 		return nil, fmt.Errorf("firestore: find player %s: %w", uid, err)
 	}

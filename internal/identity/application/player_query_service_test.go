@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/leona-art/mahjong-go/internal/identity/application"
-	"github.com/leona-art/mahjong-go/internal/identity/domain"
 )
 
 func TestPlayerQueryService_GetPlayer(t *testing.T) {
@@ -34,7 +33,7 @@ func TestPlayerQueryService_GetPlayer(t *testing.T) {
 		queries := application.NewPlayerQueryService(repo)
 
 		_, err := queries.GetPlayer(context.Background(), "unknown")
-		if !errors.Is(err, domain.ErrPlayerNotFound) {
+		if !errors.Is(err, application.ErrPlayerNotFound) {
 			t.Errorf("GetPlayer() error = %v, want ErrPlayerNotFound", err)
 		}
 	})

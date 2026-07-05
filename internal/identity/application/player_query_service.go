@@ -19,11 +19,11 @@ func newPlayerView(player *domain.Player) PlayerView {
 // PlayerQueryService implements the read-only use cases for the Identity
 // context's Player aggregate.
 type PlayerQueryService struct {
-	players domain.PlayerRepository
+	players PlayerRepository
 }
 
 // NewPlayerQueryService wires a PlayerQueryService to its repository.
-func NewPlayerQueryService(players domain.PlayerRepository) *PlayerQueryService {
+func NewPlayerQueryService(players PlayerRepository) *PlayerQueryService {
 	return &PlayerQueryService{players: players}
 }
 
