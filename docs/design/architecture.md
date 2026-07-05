@@ -74,6 +74,7 @@ FirestoreをGCP上のリアルタイム基盤として使うが、**フロント
   - `Started`後は`seats`を変更できない
 - **コマンド（ふるまい）**: `NewRoom(hostUID, settings)` / `Join(uid)` / `Leave(uid)` / `Start()`
 - **ドメインイベント**: `RoomStarted{ RoomID, Seats }` — Gameコンテキストが起動するトリガー
+- 実装: `internal/matching/domain`（Room集約）、`internal/matching/application`（`RoomCommandService`/`RoomQueryService`）、`internal/matching/infrastructure/firestore`（`RoomRepository`のFirestore実装）
 
 ### 3. Game（対局）context
 実際の麻雀対局を扱う。Room集約からは**席順（4人の`uid`配置）のみ**を受け取り、起家（誰が最初の親か）はGame開始後にGameコンテキスト側で決定する。RoomとGameは互いのドメインオブジェクト・永続化ストアを直接参照せず、`RoomStarted`イベント経由でのみ連携する。
@@ -86,4 +87,20 @@ FirestoreをGCP上のリアルタイム基盤として使うが、**フロント
 2. **Phase 2**: Gameコンテキスト（麻雀対局そのもののドメインロジック）
 3. 以降、対局履歴・統計等の参照系コンテキストは必要に応じて追加
 
-現時点ではPhase 1のMatchingコンテキストのRoom集約（ドメイン層）から実装を開始する。
+現時点ではPhase 1のMatchingコンテキストのRoom集約（ドメイン層・アプリケーション層・Firestore実装）まで完了している。次はホストの認証（Identity Platform連携）と、部屋開始（`Start()`）をGameコンテキストへつなぐハンドオフの実装が残っている。
+
+## ローカル動作確認
+
+Firestore実装のテストは、実際のGCPプロジェクトではなく**Firestoreエミュレータ**に対して実行する。
+
+```bash
+# エミュレータ起動（初回はnpxが自動でダウンロードする。gcloud/firebase CLIのインストールは不要）
+npx firebase-tools emulators:start --only firestore
+
+# 別ターミナルでテスト実行
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 go test ./...
+```
+
+- プロジェクトID・ポートはリポジトリルートの `firebase.json` / `.firebaserc` に固定してあるため、`--project`等のオプション指定は不要
+- `FIRESTORE_EMULATOR_HOST`が未設定の場合、Firestore実装のテストは自動的にスキップされる（`go test ./...`は常に成功する）
+- エミュレータはインメモリで動作し、プロセスを終了すればデータは消える。永続化やセキュリティルールの検証は対象外（本設計では認証済みbackendのみがFirestoreにアクセスするため、Security Rulesは現時点で不要）

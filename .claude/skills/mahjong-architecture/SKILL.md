@@ -31,16 +31,29 @@ internal/<context>/infrastructure/  # Firestore実装、認証連携などの具
   - **Matching**: 対局開始前の「部屋」。招待制のみ（自動マッチメイキングはスコープ外）。中心はRoom集約
   - **Game**: 麻雀対局そのもの。Matchingからは席順（uidの配置）のみを受け取り、起家はGame側で開始後に決定する。コンテキスト間の連携はドメインイベント（`RoomStarted`）経由のみで、互いの永続化ストア/ドメインオブジェクトを直接参照しない
 
-## Room集約（Matchingコンテキスト、実装済み: `internal/matching/domain`）
+## Room集約（Matchingコンテキスト、実装済み）
 
 - 属性: `hostUID`, `seats`（4席、空 or uid）, `settings`（半荘/東風戦、持ち点）, `status`（`Waiting`→`Ready`→`Started`）
 - 不変条件: hostは必ず着席／同一uidの重複着席不可／`Started`後は`seats`変更不可
-- コマンド: `NewRoom` / `Join` / `Leave` / `Start`
+- コマンド: `NewRoom` / `Join` / `Leave` / `Start`（domain）、`CreateRoom` / `JoinRoom` / `LeaveRoom`（application, `RoomCommandService`）
+- クエリ: `GetRoom` → `RoomView`（application, `RoomQueryService`）
 - イベント: `RoomStarted{ RoomID, Seats }`
+- 実装場所: `internal/matching/domain`, `internal/matching/application`, `internal/matching/infrastructure/firestore`
+
+## Firestoreエミュレータでのローカル動作確認
+
+Firestore実装（`internal/matching/infrastructure/firestore`）のテストは実プロジェクトではなくエミュレータに対して実行する。リポジトリルートの`firebase.json`/`.firebaserc`にプロジェクトID(`demo-mahjong`)とポート(8080)が固定してある。
+
+```bash
+npx firebase-tools emulators:start --only firestore
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 go test ./...
+```
+
+`FIRESTORE_EMULATOR_HOST`未設定時は該当テストが自動スキップされるので、エミュレータなしでも`go test ./...`は通る。詳細は`docs/design/architecture.md`の「ローカル動作確認」セクション参照。
 
 ## 開発フェーズ
 
-1. Phase 1: Identity Platform認証 + Matchingコンテキスト（Room集約）
+1. Phase 1: Identity Platform認証 + Matchingコンテキスト（Room集約、実装済み） — 残: 認証(uid抽出interceptor)とGameコンテキストへのハンドオフ
 2. Phase 2: Gameコンテキスト（麻雀ドメインロジック本体）
 3. 以降: 対局履歴・統計等の参照系コンテキスト
 
