@@ -13,15 +13,12 @@ func TestPlayerCommandService_RegisterPlayer(t *testing.T) {
 	t.Run("未登録のuidはPlayerとして登録できる", func(t *testing.T) {
 		service, repo := newTestCommandService()
 
-		view, err := service.RegisterPlayer(context.Background(), application.RegisterPlayerCommand{
+		err := service.RegisterPlayer(context.Background(), application.RegisterPlayerCommand{
 			UID:         "uid-1",
 			DisplayName: "たろう",
 		})
 		if err != nil {
 			t.Fatalf("RegisterPlayer() error = %v", err)
-		}
-		if view.UID != "uid-1" || view.DisplayName != "たろう" {
-			t.Errorf("RegisterPlayer() view = %+v, want {uid-1 たろう}", view)
 		}
 
 		stored, err := repo.FindByUID(context.Background(), "uid-1")
@@ -37,11 +34,11 @@ func TestPlayerCommandService_RegisterPlayer(t *testing.T) {
 		service, _ := newTestCommandService()
 		ctx := context.Background()
 
-		if _, err := service.RegisterPlayer(ctx, application.RegisterPlayerCommand{UID: "uid-1", DisplayName: "たろう"}); err != nil {
+		if err := service.RegisterPlayer(ctx, application.RegisterPlayerCommand{UID: "uid-1", DisplayName: "たろう"}); err != nil {
 			t.Fatalf("RegisterPlayer() error = %v", err)
 		}
 
-		_, err := service.RegisterPlayer(ctx, application.RegisterPlayerCommand{UID: "uid-1", DisplayName: "じろう"})
+		err := service.RegisterPlayer(ctx, application.RegisterPlayerCommand{UID: "uid-1", DisplayName: "じろう"})
 		if !errors.Is(err, application.ErrPlayerAlreadyRegistered) {
 			t.Errorf("RegisterPlayer() error = %v, want ErrPlayerAlreadyRegistered", err)
 		}
@@ -50,7 +47,7 @@ func TestPlayerCommandService_RegisterPlayer(t *testing.T) {
 	t.Run("表示名が空の場合は登録が拒否される", func(t *testing.T) {
 		service, _ := newTestCommandService()
 
-		_, err := service.RegisterPlayer(context.Background(), application.RegisterPlayerCommand{UID: "uid-1", DisplayName: ""})
+		err := service.RegisterPlayer(context.Background(), application.RegisterPlayerCommand{UID: "uid-1", DisplayName: ""})
 		if !errors.Is(err, domain.ErrDisplayNameRequired) {
 			t.Errorf("RegisterPlayer() error = %v, want ErrDisplayNameRequired", err)
 		}

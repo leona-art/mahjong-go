@@ -32,16 +32,16 @@ type RegisterPlayerCommand struct {
 	DisplayName string
 }
 
-func (s *PlayerCommandService) RegisterPlayer(ctx context.Context, cmd RegisterPlayerCommand) (PlayerView, error) {
+func (s *PlayerCommandService) RegisterPlayer(ctx context.Context, cmd RegisterPlayerCommand) error {
 	player, err := domain.NewPlayer(cmd.UID, cmd.DisplayName)
 	if err != nil {
-		return PlayerView{}, err
+		return err
 	}
 	if err := s.players.Create(ctx, player); err != nil {
 		if errors.Is(err, domain.ErrPlayerAlreadyExists) {
-			return PlayerView{}, ErrPlayerAlreadyRegistered
+			return ErrPlayerAlreadyRegistered
 		}
-		return PlayerView{}, err
+		return err
 	}
-	return newPlayerView(player), nil
+	return nil
 }

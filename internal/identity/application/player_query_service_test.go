@@ -12,7 +12,7 @@ import (
 func TestPlayerQueryService_GetPlayer(t *testing.T) {
 	t.Run("登録済みのPlayerを取得できる", func(t *testing.T) {
 		commands, repo := newTestCommandService()
-		if _, err := commands.RegisterPlayer(context.Background(), application.RegisterPlayerCommand{
+		if err := commands.RegisterPlayer(context.Background(), application.RegisterPlayerCommand{
 			UID:         "uid-1",
 			DisplayName: "たろう",
 		}); err != nil {
