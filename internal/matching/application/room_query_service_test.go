@@ -37,7 +37,7 @@ func TestRoomQueryService_GetRoom(t *testing.T) {
 		queryService := application.NewRoomQueryService(repo)
 
 		_, err := queryService.GetRoom(context.Background(), "no-such-room")
-		if !errors.Is(err, domain.ErrRoomNotFound) {
+		if !errors.Is(err, application.ErrRoomNotFound) {
 			t.Errorf("GetRoom() error = %v, want ErrRoomNotFound", err)
 		}
 	})

@@ -14,13 +14,13 @@ type RoomIDGenerator func() domain.RoomID
 // RoomCommandService implements the state-changing use cases for the
 // Matching context's Room aggregate.
 type RoomCommandService struct {
-	rooms     domain.RoomRepository
+	rooms     RoomRepository
 	newRoomID RoomIDGenerator
 }
 
 // NewRoomCommandService wires a RoomCommandService to its repository and ID
 // generator.
-func NewRoomCommandService(rooms domain.RoomRepository, newRoomID RoomIDGenerator) *RoomCommandService {
+func NewRoomCommandService(rooms RoomRepository, newRoomID RoomIDGenerator) *RoomCommandService {
 	return &RoomCommandService{rooms: rooms, newRoomID: newRoomID}
 }
 

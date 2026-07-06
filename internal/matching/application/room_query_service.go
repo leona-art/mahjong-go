@@ -18,11 +18,11 @@ type RoomView struct {
 // RoomQueryService implements the read-only use cases for the Matching
 // context's Room aggregate.
 type RoomQueryService struct {
-	rooms domain.RoomRepository
+	rooms RoomRepository
 }
 
 // NewRoomQueryService wires a RoomQueryService to its repository.
-func NewRoomQueryService(rooms domain.RoomRepository) *RoomQueryService {
+func NewRoomQueryService(rooms RoomRepository) *RoomQueryService {
 	return &RoomQueryService{rooms: rooms}
 }
 

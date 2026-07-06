@@ -1,5 +1,5 @@
 // Package firestore is the Matching bounded context's infrastructure-layer
-// implementation of domain.RoomRepository, backed by Cloud Firestore.
+// implementation of application.RoomRepository, backed by Cloud Firestore.
 package firestore
 
 import (
@@ -11,13 +11,14 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/leona-art/mahjong-go/internal/matching/application"
 	"github.com/leona-art/mahjong-go/internal/matching/domain"
 )
 
 const roomsCollection = "rooms"
 
-// RoomRepository is a Firestore-backed domain.RoomRepository. Point the
-// client at the Firestore emulator locally by setting the
+// RoomRepository is a Firestore-backed application.RoomRepository. Point
+// the client at the Firestore emulator locally by setting the
 // FIRESTORE_EMULATOR_HOST environment variable before constructing it.
 type RoomRepository struct {
 	client *fs.Client
@@ -63,7 +64,7 @@ func (r *RoomRepository) FindByID(ctx context.Context, id domain.RoomID) (*domai
 	snap, err := r.client.Collection(roomsCollection).Doc(string(id)).Get(ctx)
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
-			return nil, domain.ErrRoomNotFound
+			return nil, application.ErrRoomNotFound
 		}
 		return nil, fmt.Errorf("firestore: find room %s: %w", id, err)
 	}

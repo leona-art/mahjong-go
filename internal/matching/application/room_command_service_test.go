@@ -64,7 +64,7 @@ func TestRoomCommandService_JoinRoom(t *testing.T) {
 		service, _ := newTestCommandService()
 
 		err := service.JoinRoom(context.Background(), application.JoinRoomCommand{RoomID: "no-such-room", UID: "guest"})
-		if !errors.Is(err, domain.ErrRoomNotFound) {
+		if !errors.Is(err, application.ErrRoomNotFound) {
 			t.Errorf("JoinRoom() error = %v, want ErrRoomNotFound", err)
 		}
 	})

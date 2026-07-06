@@ -29,8 +29,8 @@ Firestore streaming instead of direct client subscription).
 ```
 proto/<package>/v1/*.proto        # Proto source of truth (buf module root: proto/)
 gen/<package>/v1/                 # Generated Go code (protoc-gen-go + protoc-gen-connect-go); DO NOT hand-edit
-internal/<context>/domain/        # Entities, value objects, aggregates, domain events, repository interfaces
-internal/<context>/application/   # Command/Query use cases (CQS), orchestrates the domain layer
+internal/<context>/domain/        # Entities, value objects, aggregates, domain events
+internal/<context>/application/   # Command/Query use cases (CQS), orchestrates the domain layer, repository interfaces
 internal/<context>/infrastructure/ # Repository implementations (Firestore, etc.), auth integration
 cmd/server/main.go                # Example Connect server (h2c on localhost:8080)
 cmd/client/main.go                # Example Connect client calling the server
@@ -48,8 +48,9 @@ Proto packages follow a `<service>/v1` versioning convention (e.g.
 Bounded contexts under `internal/` (Identity, Matching, Game — see
 `docs/design/architecture.md`) each get their own `domain/`, `application/`,
 and `infrastructure/` subpackages. The domain layer must not depend on the
-other two; the application layer depends only on the domain layer and
-reaches infrastructure through interfaces declared in the domain layer.
+other two and knows nothing about persistence; the application layer depends
+only on the domain layer, declares its own repository interfaces (ports),
+and reaches infrastructure through them (dependency inversion).
 
 ## Codegen tool management
 

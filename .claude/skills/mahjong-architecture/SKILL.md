@@ -13,12 +13,13 @@ Matching/Gameコンテキストに関わる作業を始める前に、必ずこ�
 ## レイヤー構成（コンテキストごとに共通）
 
 ```
-internal/<context>/domain/          # エンティティ、値オブジェクト、ドメインイベント、集約、リポジトリインターフェース
-internal/<context>/application/     # Command/Queryユースケース（CQS）。ドメイン層のオーケストレーション
+internal/<context>/domain/          # エンティティ、値オブジェクト、ドメインイベント、集約
+internal/<context>/application/     # Command/Queryユースケース（CQS）。ドメイン層のオーケストレーション、リポジトリインターフェース
 internal/<context>/infrastructure/  # Firestore実装、認証連携などの具体的な実装
 ```
 
-- ドメイン層は他レイヤーに依存しない。リポジトリのインターフェースはドメイン層で宣言し、実装はインフラ層に置く
+- ドメイン層は他レイヤーに依存しない。永続化という概念そのものを一切知らない純粋なビジネスルールのモデルとする（リポジトリインターフェースも置かない）
+- リポジトリインターフェース（ポート）は**アプリケーション層**で宣言し、実装はインフラ層に置く。永続化を必要とするのはユースケース（アプリケーション層）でありドメイン層ではないため
 - CQSの分離はアプリケーション層でのみ意識する（ドメイン層のメソッド自体にCQSは適用しない）
 - connect-goのハンドラ（`cmd/server`）はアプリケーション層を呼ぶだけの薄い層にする
 
@@ -38,7 +39,8 @@ internal/<context>/infrastructure/  # Firestore実装、認証連携などの具
 - コマンド: `NewRoom` / `Join` / `Leave` / `Start`（domain）、`CreateRoom` / `JoinRoom` / `LeaveRoom`（application, `RoomCommandService`）
 - クエリ: `GetRoom` → `RoomView`（application, `RoomQueryService`）
 - イベント: `RoomStarted{ RoomID, Seats }`
-- 実装場所: `internal/matching/domain`, `internal/matching/application`, `internal/matching/infrastructure/firestore`
+- `RoomRepository`インターフェース（`Save`/`FindByID`、`ErrRoomNotFound`）は`internal/matching/application`で宣言する。`internal/matching/domain`はRoom集約のみを持ち、永続化については何も知らない
+- 実装場所: `internal/matching/domain`（Room集約）, `internal/matching/application`（Command/Queryサービス、`RoomRepository`インターフェース）, `internal/matching/infrastructure/firestore`
 
 ## Firestoreエミュレータでのローカル動作確認
 

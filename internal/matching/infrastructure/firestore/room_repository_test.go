@@ -12,6 +12,7 @@ import (
 
 	fs "cloud.google.com/go/firestore"
 
+	"github.com/leona-art/mahjong-go/internal/matching/application"
 	"github.com/leona-art/mahjong-go/internal/matching/domain"
 	matchingfs "github.com/leona-art/mahjong-go/internal/matching/infrastructure/firestore"
 )
@@ -90,7 +91,7 @@ func TestRoomRepository_SaveAndFindByID(t *testing.T) {
 		repo := matchingfs.NewRoomRepository(client)
 
 		_, err := repo.FindByID(context.Background(), uniqueRoomID(t))
-		if !errors.Is(err, domain.ErrRoomNotFound) {
+		if !errors.Is(err, application.ErrRoomNotFound) {
 			t.Errorf("FindByID() error = %v, want ErrRoomNotFound", err)
 		}
 	})

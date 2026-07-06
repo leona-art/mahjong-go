@@ -15,13 +15,15 @@
 各境界づけられたコンテキストは、以下の3層で構成する。
 
 ```
-internal/<context>/domain/          # エンティティ、値オブジェクト、ドメインイベント、集約、リポジトリインターフェース
-internal/<context>/application/     # Command/Queryユースケース（CQS）。ドメイン層を呼び出すオーケストレーション
+internal/<context>/domain/          # エンティティ、値オブジェクト、ドメインイベント、集約
+internal/<context>/application/     # Command/Queryユースケース（CQS）。ドメイン層を呼び出すオーケストレーション、リポジトリインターフェース
 internal/<context>/infrastructure/  # リポジトリ実装（Firestore等）、認証連携、外部サービス連携
 ```
 
-- ドメイン層は他レイヤーに依存しない（インフラ層のインターフェースはドメイン層で宣言し、実装はインフラ層に置く）
-- アプリケーション層はドメイン層のみに依存し、インフラ層には依存性逆転（インターフェース経由）でアクセスする
+- ドメイン層は他レイヤーに依存しない。永続化という概念そのものを一切知らない、純粋なビジネスルールのモデルとする（リポジトリインターフェースも置かない）
+- リポジトリインターフェース（ポート）は**アプリケーション層**で宣言する。永続化を必要とするのはユースケースを実行するアプリケーション層であり、ドメイン層ではないため
+- アプリケーション層はドメイン層に依存し、自身が宣言したインターフェース経由でインフラ層にアクセスする（依存性逆転）
+- インフラ層はアプリケーション層のインターフェースを実装し、ドメイン層の型（エンティティ・値オブジェクト）を直接利用してよい
 - connect-goのハンドラ（`cmd/server`配下）はアプリケーション層のCommand/Queryサービスを呼び出すだけの薄い層にする
 
 ## 認証
@@ -74,7 +76,8 @@ FirestoreをGCP上のリアルタイム基盤として使うが、**フロント
   - `Started`後は`seats`を変更できない
 - **コマンド（ふるまい）**: `NewRoom(hostUID, settings)` / `Join(uid)` / `Leave(uid)` / `Start()`
 - **ドメインイベント**: `RoomStarted{ RoomID, Seats }` — Gameコンテキストが起動するトリガー
-- 実装: `internal/matching/domain`（Room集約）、`internal/matching/application`（`RoomCommandService`/`RoomQueryService`）、`internal/matching/infrastructure/firestore`（`RoomRepository`のFirestore実装）
+- `RoomRepository`インターフェース（`Save`/`FindByID`、`ErrRoomNotFound`）は**アプリケーション層**（`internal/matching/application`）で宣言する。Room集約自体（`internal/matching/domain`）は永続化について何も知らない
+- 実装: `internal/matching/domain`（Room集約のみ）、`internal/matching/application`（`RoomCommandService`/`RoomQueryService`/`RoomRepository`インターフェース）、`internal/matching/infrastructure/firestore`（`RoomRepository`のFirestore実装）
 
 ### 3. Game（対局）context
 実際の麻雀対局を扱う。Room集約からは**席順（4人の`uid`配置）のみ**を受け取り、起家（誰が最初の親か）はGame開始後にGameコンテキスト側で決定する。RoomとGameは互いのドメインオブジェクト・永続化ストアを直接参照せず、`RoomStarted`イベント経由でのみ連携する。

@@ -9,8 +9,8 @@ import (
 	"github.com/leona-art/mahjong-go/internal/matching/domain"
 )
 
-// fakeRoomRepository is an in-memory domain.RoomRepository used to test the
-// application layer in isolation from any real persistence.
+// fakeRoomRepository is an in-memory application.RoomRepository used to
+// test the application layer in isolation from any real persistence.
 type fakeRoomRepository struct {
 	mu    sync.Mutex
 	rooms map[domain.RoomID]*domain.Room
@@ -32,7 +32,7 @@ func (f *fakeRoomRepository) FindByID(_ context.Context, id domain.RoomID) (*dom
 	defer f.mu.Unlock()
 	room, ok := f.rooms[id]
 	if !ok {
-		return nil, domain.ErrRoomNotFound
+		return nil, application.ErrRoomNotFound
 	}
 	return room, nil
 }
